@@ -1,0 +1,5 @@
+train: ../dataset/labeled/images
+val: ../dataset/labeled/images
+
+names:
+  0: stick

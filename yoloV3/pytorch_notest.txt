@@ -1,0 +1,17 @@
+Sequential module:
+A Sequential is a container that can hold other modules and apply them in sequence to an input tensor. 
+It is the simplest way to build a neural network in PyTorch.
+
+import torch.nn as nn
+model = nn.Sequential(
+    nn.Linear(10, 20),
+    nn.ReLU(),
+    nn.Linear(20, 10),
+)
+
+The Sequential will then apply the modules in the order they are listed to the input tensor. In this case,
+the input tensor will be first passed to the Linear layer with 10 input features and 20 output features. 
+The output of the Linear layer will then be passed to the ReLU activation function. Finally, the output of 
+the ReLU layer will be passed to the Linear layer with 20 input features and 10 output features.
+The Sequential is a very convenient way to build neural networks in PyTorch. It makes it easy to create 
+complex networks with multiple layers.
