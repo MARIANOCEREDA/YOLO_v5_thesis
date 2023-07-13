@@ -36,9 +36,9 @@ def create_csv(images_folder:str, labels_folder:str):
         # 4 - Get bbox data
         with open(labels_folder + f"/{files[i]}", 'r') as f:
             
-            file_content = f.readlines()
+            line_content = f.readlines()
 
-            for line in file_content:
+            for line in line_content:
                 bbox_data = line.split(' ')
                 obj_class, x_c, y_c, w, h = bbox_data
 
@@ -53,7 +53,7 @@ def create_csv(images_folder:str, labels_folder:str):
 
     with open(obj_data_csv, 'w', newline='') as csv_f:
         writer = csv.writer(csv_f)
-        writer.writerow(img_csv_headers)
+        writer.writerow(obj_csv_headers)
         writer.writerows(obj_data_matrix)
 
     with open(img_data_csv, 'w', newline='') as csv_f:
@@ -66,8 +66,8 @@ if __name__ == "__main__" :
 
     config_data = cfg()
 
-    images_folder = config_data["paths"]["train_images_path"]
-    labels_folder = config_data["paths"]["train_labels_path"]
+    images_folder = config_data["paths"]["train_images"]
+    labels_folder = config_data["paths"]["train_labels"]
 
     create_csv(images_folder, labels_folder)
 
