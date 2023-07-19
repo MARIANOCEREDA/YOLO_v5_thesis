@@ -22,7 +22,6 @@ from util.plot_image import plot_image
 
 config = cfg()
     
-
 class CustomDataset(Dataset):
 
     def __init__(
@@ -31,7 +30,7 @@ class CustomDataset(Dataset):
         img_dir,
         label_dir,
         anchors,
-        image_size=640,
+        image_size,
         detection_layers=[13, 26, 52],
         num_classes=1,
         transform=None,
@@ -70,12 +69,11 @@ class CustomDataset(Dataset):
 
         # Get paths to labels and images
         image_path = os.path.join(self.imgs_dir, self.annotations.iloc[index]["id"] + ".jpg")
-        print(image_path)
-        label_path = os.path.join(self.labels_dir,self.annotations.iloc[index]["id"] + ".txt")
+        label_path = os.path.join(self.labels_dir, self.annotations.iloc[index]["id"] + ".txt")
 
         # Get image and bbox within the file
-        im = Image.open(image_path)
-        image = np.array(ImageOps.exif_transpose(im).resize((416, 416)).convert("RGB"))
+        im = Image.open(image_path).resize((self.image_size, self.image_size))
+        image = np.array(ImageOps.exif_transpose(im).convert("RGB"))
         bboxes = np.roll(np.loadtxt(fname=label_path, delimiter=" ", ndmin=2), 4, axis=1).tolist()
 
         # Apply augmentations
@@ -87,7 +85,7 @@ class CustomDataset(Dataset):
         
         # Create 3 empty targets, one for every prediction scale
         # Every target has the format [3, S, S, 6], ->  6 = [p_object, x, y, w, h, obj_class]
-        # I have three scales [13,26,52] and for each scale I hace 3 anchor boxes.
+        # I have three scales [13, 26, 52] and for each scale I hace 3 anchor boxes.
         targets:list[torch.Tensor] = [torch.zeros((self.num_anchors // 3, x, x, 6)) for x in self.detection_layers]
 
         for box in bboxes:
@@ -108,8 +106,8 @@ class CustomDataset(Dataset):
 
                 S = self.detection_layers[scale_idx]
 
-                # Cell (x_cell, y_cell) relative to the image.
-                i, j = int(S * y), int(S * x)  
+                # Cell coordinates , relative to the image. Coordinates to the (0,0) of the cell.
+                i, j = int(S * x), int(S * y) 
 
                 # Analize if there is an object (p0)
                 anchor_taken = targets[scale_idx][anchor_on_scale, i, j, 0]
@@ -119,13 +117,14 @@ class CustomDataset(Dataset):
                     # [p0 <-, box_coordinates, class_label]
                     targets[scale_idx][anchor_on_scale, i, j, 0] = 1
 
-                    # width, height relative to the cell.
-                    x_cell, y_cell = S * x - j, S * y - i  # both between [0,1]
+                    # center of the box relative to the cell
+                    x_cell, y_cell = S * x - i, S * y - j  # both between [0,1]
+
+                    # width and height relative to the cell
                     width_cell, height_cell = (width * S, height * S,)  # can be greater than 1 since it's relative to cell
 
                     # Get box_coordinates
                     box_coordinates = torch.tensor([x_cell, y_cell, width_cell, height_cell])
-                    #print(f"Box coordinates: {box_coordinates} - for box: {box}")
 
                     # [p0, box_coordinates <-, class_label]
                     targets[scale_idx][anchor_on_scale, i, j, 1:5] = box_coordinates
@@ -142,14 +141,14 @@ class CustomDataset(Dataset):
 
         return image, tuple(targets)
 
-def test():
+def test(debug=False):
 
     config = cfg()
 
     # Path to folders
-    csv_data = config["paths"]["csv_data"]
-    images_path = config["paths"]["train_images"]
-    labels_path = config["paths"]["train_labels"]
+    csv_data = config["paths"]["debug"]["csv_data"]
+    images_path = config["paths"]["debug"]["images"]
+    labels_path = config["paths"]["debug"]["labels"]
 
     # Predefined scaled anchors
     anchors = config["anchors"]
@@ -163,9 +162,10 @@ def test():
         csv_file=csv_data,
         img_dir=images_path,
         label_dir=labels_path,
+        image_size=config["image_size"],
         detection_layers=detection_layers,
         anchors=anchors,
-        transform=None,
+        transform=transform,
     )
 
     anchors = torch.tensor(anchors) / (
@@ -175,25 +175,24 @@ def test():
     loader = DataLoader(dataset=dataset, batch_size=1, shuffle=True)
 
     for image, target in loader:
+
         boxes = []
 
         for i in range(target[0].shape[1]):
 
             anchor = anchors[i]
-            '''print(f"Image shape_ {x.shape}")
-            print(f"Anchor shape: {anchor.shape}")
-            print(f"Target shape: {y[i].shape}")
-            print(f"Target shape: {y}")'''
 
-            # Necessary to plot
-            boxes += cells_to_bboxes(
-                target[i], is_preds=False, S=target[i].shape[2], anchors=anchor
-            )[0]
+            boxes += cells_to_bboxes(target[i], is_preds=False, S=target[i].shape[2], anchors=anchor)[0]
 
-        boxes = nms(boxes, iou_threshold=1, threshold=0.7, box_format="midpoint")
+        boxes = nms(boxes, iou_threshold=0.8, threshold=0.7, box_format="midpoint")
 
-        print(image[0].shape)
-        plot_image(image[0].to("cuda"), boxes)
+        plot_image(image[0].permute(1, 2, 0), boxes)
+
+        if debug:
+            obj = target[0][..., 0] == 1
+            with open('tensor_values.txt', 'w+') as file:
+                torch.set_printoptions(threshold=torch.inf)
+                file.write(str(target))
 
 
 if __name__ == "__main__":

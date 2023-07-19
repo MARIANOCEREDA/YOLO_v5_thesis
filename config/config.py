@@ -3,20 +3,48 @@ import os
 def config():
 
     return {
+        "device":"cuda",
         "num_anchors":9,
         "num_classes":1,
         "class_name":"stick",
-        "image_size":640,
+        "image_size":416,
+        "train":{
+            "batch_size":1,
+            "lr":1e-5,
+            "wd":1e-4,
+            "epochs":50,
+            "threshold":0.05,
+            "iou_threshold":0.60,
+            "nms_threshold":0.5
+        },
         "paths":{
             "dataset":f"{os.getcwd()}\..\dataset\labeled",
-            "train_images":f"{os.getcwd()}\..\dataset\labeled\images",
-            "train_labels":f"{os.getcwd()}\..\dataset\labeled\labels",
-            "csv_data":f"{os.getcwd()}\..\preprocessing\objs_data.csv"
+            "train":{
+                "images":f"{os.getcwd()}\..\dataset/train\images",
+                "labels":f"{os.getcwd()}\..\dataset/train\labels",
+                "csv_data":f"{os.getcwd()}\..\preprocessing\img_train_data.csv",
+            },
+            "validation":{
+                "images":f"{os.getcwd()}\..\dataset/val\images",
+                "labels":f"{os.getcwd()}\..\dataset/val\labels",
+                "csv_data":f"{os.getcwd()}\..\preprocessing\img_val_data.csv",
+            },
+            "test":{
+                "images":f"{os.getcwd()}\..\dataset/test\images",
+                "labels":f"{os.getcwd()}\..\dataset/test\labels",
+                "csv_data":f"{os.getcwd()}\..\preprocessing\img_test_data.csv",
+            },
+            "debug":{
+                "images":f"{os.getcwd()}\..\dataset\debug\images",
+                "labels":f"{os.getcwd()}\..\dataset\debug\labels",
+                "csv_data":f"{os.getcwd()}\..\preprocessing\debug_img_data.csv",
+            },
         },
         "anchors":[
-            [(0.055475632593750004,0.055650973000000006), (0.059375,0.057813), (0.061250111109375005,0.06235626667187501)], # P3/8
-            [(0.068528884609375,0.06776703846875), (0.06944086275,0.0684237843125), (0.071402693875,0.071131836734375)],  # P4/16
-            [(0.07477680953125,0.07449970689062499), (0.076011844828125,0.078125095234375), (0.097449782046875,0.094121923078125)],  # P5/32
+            [(0.07477680953125,0.07449970689062499), (0.076011844828125,0.078125095234375), (0.097449782046875,0.094121923078125)],
+            [(0.068528884609375,0.06776703846875), (0.06944086275,0.0684237843125), (0.071402693875,0.071131836734375)],
+            [(0.055475632593750004,0.055650973000000006), (0.059375,0.057813), (0.061250111109375005,0.06235626667187501)]
+           , 
         ],
         "detection_layers":[13, 26, 52]
     }

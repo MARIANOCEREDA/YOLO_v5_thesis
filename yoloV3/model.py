@@ -1,10 +1,10 @@
 import torch
 import torch.nn as nn
-from ..config.config import architecture_config
+from config.config import architecture_config
 
 class CNNBlock(nn.Module):
 
-    def __init__(self, in_channels:int, out_channels:int, bn_act:bool, **kwargs) -> None:
+    def __init__(self, in_channels:int, out_channels:int, bn_act:bool=True, **kwargs) -> None:
 
         super().__init__()
 
@@ -29,7 +29,7 @@ class CNNBlock(nn.Module):
         """
 
         if self.use_bn_act:
-            return self.leaky(self.bn(self.conv))
+            return self.leaky(self.bn(self.conv(x)))
         
         else:
             return self.conv(x)
@@ -69,6 +69,7 @@ class ResidualBlock(nn.Module):
         """
 
         for conv_layer in self.layers:
+
             if self.use_residual:
                 x = x + conv_layer(x)
 
@@ -115,6 +116,7 @@ class ScalePrediction(nn.Module):
 class YOLOv3(nn.Module):
 
     def __init__(self, in_channels:int, arch_config:list, num_classes:int = 1) -> None:
+
         super().__init__()
 
         self.in_channels = in_channels
@@ -131,7 +133,7 @@ class YOLOv3(nn.Module):
 
         route_connections = []
 
-        for layer in self.layers:
+        for layer in self.conv_layers:
 
             if isinstance(layer, ScalePrediction):
 
@@ -164,7 +166,7 @@ class YOLOv3(nn.Module):
 
             if module["type"] == "Conv":
 
-                out_channels, kernel_size, stride = module
+                out_channels, kernel_size, stride = module["size"]
 
                 layers.append(
                     CNNBlock(
@@ -182,15 +184,17 @@ class YOLOv3(nn.Module):
 
                 num_repeats = module["num_repeats"]
 
-                layers.append(ResidualBlock(in_channels, use_residual=True, num_repeats=num_repeats))
+                layers.append(ResidualBlock(in_channels, num_repeats=num_repeats,))
             
             elif module["type"] == "Detect":
                 
                 layers += [
                     ResidualBlock(in_channels, use_residual=False, num_repeats=1),
-                    CNNBlock(in_channels, in_channels//2, kernel_size=1),
-                    ScalePrediction(in_channels, num_classes=self.num_classes)
+                    CNNBlock(in_channels, in_channels // 2, kernel_size=1),
+                    ScalePrediction(in_channels // 2, num_classes=self.num_classes)
                 ]
+
+                in_channels = in_channels // 2
             
             elif module["type"] == "Upsample":
 
@@ -200,7 +204,27 @@ class YOLOv3(nn.Module):
         
         return layers
 
+if __name__ == "__main__":
+    num_classes = 1
+    IMAGE_SIZE = 416
+    BATCH_SIZE = 1
+    arch = architecture_config()
 
+
+    model = YOLOv3(in_channels=3, num_classes=num_classes, arch_config=arch)
+
+    x = torch.randn((1, 3, IMAGE_SIZE, IMAGE_SIZE))
+
+    print(f"Input shape: {x.shape}")
+
+    out = model(x)
+
+    print(out[0].shape)
+
+    assert out[0].shape == (BATCH_SIZE, 3, IMAGE_SIZE//32, IMAGE_SIZE//32, num_classes + 5)
+    assert out[1].shape == (BATCH_SIZE, 3, IMAGE_SIZE//16, IMAGE_SIZE//16, num_classes + 5)
+    assert out[2].shape == (BATCH_SIZE, 3, IMAGE_SIZE//8, IMAGE_SIZE//8, num_classes + 5)
+    print("Success!")
 
 
 

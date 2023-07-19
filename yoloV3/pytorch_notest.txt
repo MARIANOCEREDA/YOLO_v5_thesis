@@ -15,3 +15,22 @@ The output of the Linear layer will then be passed to the ReLU activation functi
 the ReLU layer will be passed to the Linear layer with 20 input features and 10 output features.
 The Sequential is a very convenient way to build neural networks in PyTorch. It makes it easy to create 
 complex networks with multiple layers.
+
+Object loss:
+n object detection, we use "anchors" as reference boxes to detect objects in an image. When an anchor is assigned to an object,
+we want it to predict a bounding box that accurately surrounds the object.
+
+To train the model, we need to create target values for the network to learn from. For anchors assigned to objects, 
+we set their object score to 1. Now, one approach could be to train the network to output large values in the cells and 
+anchors where we have assigned a target bounding box. This means that regardless of how bad the network's bounding box 
+prediction is, it will always try to predict a high object score.
+
+However, during inference (when the model is used to make predictions), we rely on the object score to determine which bounding 
+boxes to output. If we follow the proposed approach, the object score won't accurately reflect the likelihood of an object 
+being present in the predicted bounding box.
+
+In the YOLOv3 paper, there's a different idea. The object score predicted by the model should reflect the intersection 
+over union (IoU) between the predicted bounding box and the target bounding box. IoU is a measure of how well the 
+predicted box overlaps with the actual box. By using this approach, the object score gives us a better estimate of 
+the likelihood that an object exists within the outputted bounding box.
+
