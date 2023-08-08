@@ -1,0 +1,7 @@
+train: ../dataset/labeled/images
+val: ../dataset/labeled/images
+
+names:
+  0: stick
+
+iou_t: 0.8
