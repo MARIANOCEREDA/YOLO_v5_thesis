@@ -2,12 +2,12 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 from torchvision.ops import box_iou
-from config.config import config
+from config import config #lo cambie pq me tiraba error y puse el config dentro de kmeans para probar
 import glob
 import os
 import logging
 
-config_file = '../../config/config.json'
+config_file = '../../config'
 config_data = None
 
 logging.basicConfig(level=logging.INFO)
@@ -17,7 +17,7 @@ def load_txt_files():
 
     LOGGER.info("Loading txt files ...")
 
-    summary_file_path = config_data["paths"]["train_labels_path"] + '\summary.txt'
+    summary_file_path = config_data["paths"]["train"]["labels"] + '\summary.txt'
 
     if os.path.exists(summary_file_path):
 
@@ -28,7 +28,7 @@ def load_txt_files():
         except:
             LOGGER.error(f"Not able to remove file: {summary_file_path}")
 
-    files = glob.glob(config_data["paths"]["train_labels_path"] + '\*.txt')
+    files = glob.glob(config_data["paths"]["train"]["labels"] + '\*.txt')
 
     for file in files:
 
@@ -47,9 +47,9 @@ def load_bboxes():
 
     LOGGER.info("Loading bounding boxes ...")
 
-    bboxes_file_path = config_data['paths']['train_labels_path'] + "\summary.txt"
+    bboxes_file_path = config_data['paths']['train']['labels'] + "\summary.txt"
 
-    bboxes = torch.tensor(np.loadtxt(bboxes_file_path, dtype=float, delimiter=" ", ndmin=2)[:, 1:]) * 640 # Take only x, y, w, h 
+    bboxes = torch.tensor(np.loadtxt(bboxes_file_path, dtype=float, delimiter=" ", ndmin=2, usecols=(1, 2, 3, 4))) * 640 # Take only x, y, w, h 
 
     # Convert from (x, y, w, h ) format, to (x1,y1,x2,y2 format)
 

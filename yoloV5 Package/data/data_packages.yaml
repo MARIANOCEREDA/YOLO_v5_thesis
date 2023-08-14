@@ -1,0 +1,14 @@
+
+path: ../dataset/package # dataset root dir
+train: train/images  # train images (relative to 'path') 128 images
+val: valid/images  # val images (relative to 'path') 128 images
+test:  test/images
+
+# Classes
+names:
+  0: stick
+  1: package
+
+iou_t: 0.8
+
+

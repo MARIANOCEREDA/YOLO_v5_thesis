@@ -1,0 +1,7 @@
+train: ../dataset/package/no-labeled/images
+val: ../dataset/package/no-labeled/images
+
+names:
+  1: package
+
+iou_t: 0.8
