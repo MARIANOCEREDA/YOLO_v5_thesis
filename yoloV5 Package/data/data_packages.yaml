@@ -6,7 +6,6 @@ test:  test/images
 
 # Classes
 names:
-  0: stick
   1: package
 
 iou_t: 0.8
